@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )

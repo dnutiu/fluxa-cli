@@ -55,7 +55,7 @@ func (r *Repository) request(ctx context.Context, method, path string, query url
 	}
 	req.Header.Set("Authorization", "Bearer "+r.key)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "fluxa-cli/0.1")
+	req.Header.Set("User-Agent", "github.com/dnutiu/fluxa-cli/0.1")
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fluxa-cli/internal/infrastructure/config"
+	"github.com/dnutiu/fluxa-cli/internal/infrastructure/config"
 	"github.com/spf13/cobra"
 )
 

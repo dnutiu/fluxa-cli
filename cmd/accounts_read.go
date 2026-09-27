@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fluxa-cli/internal/application"
-	"fluxa-cli/internal/domain"
-	"fluxa-cli/internal/presentation"
+	"github.com/dnutiu/fluxa-cli/internal/application"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/presentation"
 	"github.com/spf13/cobra"
 )
 

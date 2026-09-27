@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"fluxa-cli/cmd"
+	"github.com/dnutiu/fluxa-cli/cmd"
 )
 
 func main() {

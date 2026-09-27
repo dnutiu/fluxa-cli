@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 func TestCreateTransactionSendsBearerAndIdempotencyKey(t *testing.T) {

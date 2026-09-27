@@ -1,4 +1,4 @@
-module fluxa-cli
+module github.com/dnutiu/fluxa-cli
 
 go 1.26
 

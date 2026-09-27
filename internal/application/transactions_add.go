@@ -3,7 +3,7 @@ package application
 import (
 	"context"
 	"errors"
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 	"strings"
 )
 

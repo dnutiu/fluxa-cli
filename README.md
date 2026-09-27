@@ -6,19 +6,41 @@
 
 Fluxa CLI brings accounts, transactions, subscriptions, and categories into your terminal. It uses Fluxa's public `/api/v1` API, Cobra commands, and Viper settings.
 
-## 🚀 Get started
+## 🚀 Install
 
-You need Go 1.26 or newer to build the CLI and a Fluxa Pro API key from **Tools → API access**. The current API does not accept Basic accounts.
+You need Go 1.26 or newer. Install the latest published version from GitHub:
 
 ```sh
-go build -o fluxa .
-export FLUXA_API_KEY='fluxa_live_...'
-./fluxa auth status
-./fluxa entities list
-./fluxa config set-entity 7
+go install github.com/dnutiu/fluxa-cli/cmd/fluxa@latest
+fluxa --help
 ```
 
-Examples below use `fluxa`; use `./fluxa` if the binary is not on your `PATH`. Replace example IDs with IDs from your own entity.
+Go puts the `fluxa` binary in `GOBIN` if set, or `$(go env GOPATH)/bin`
+otherwise. Add that directory to your `PATH` if `fluxa` is not found. Use
+`go install` for an executable; [`go get` manages dependencies](https://go.dev/doc/go-get-install-deprecation).
+
+To build the repository yourself instead:
+
+```sh
+git clone https://github.com/dnutiu/fluxa-cli.git
+cd fluxa-cli
+go build -o fluxa ./cmd/fluxa
+```
+
+## 🔑 Connect
+
+Create a Fluxa Pro API key in **Tools → API access**. The current API does not
+accept Basic accounts.
+
+```sh
+export FLUXA_API_KEY='fluxa_live_...'
+fluxa auth status
+fluxa entities list
+fluxa config set-entity 7
+```
+
+If you built the binary locally, use `./fluxa` for the examples until it is
+on your `PATH`. Replace example IDs with IDs from your own entity.
 
 ## ✨ A day with Fluxa
 
@@ -194,7 +216,7 @@ Add `--no-descriptions` to any `completion` shell command for a smaller script w
 ```sh
 go test ./...
 go vet ./...
-go build -o fluxa .
+go build -o fluxa ./cmd/fluxa
 ```
 
 Tests cover command wiring and flags, config secrecy, operation validation, request headers and paths, API errors, and account balance mapping. They use local HTTP fixtures, so no Fluxa account is needed.

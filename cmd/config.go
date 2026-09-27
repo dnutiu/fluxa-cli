@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"fluxa-cli/internal/domain"
-	"fluxa-cli/internal/infrastructure/fluxa"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/infrastructure/fluxa"
 	"github.com/spf13/cobra"
 )
 

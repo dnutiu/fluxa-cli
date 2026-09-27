@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"fluxa-cli/internal/application"
-	"fluxa-cli/internal/presentation"
+	"github.com/dnutiu/fluxa-cli/internal/application"
+	"github.com/dnutiu/fluxa-cli/internal/presentation"
 	"github.com/spf13/cobra"
 )
 

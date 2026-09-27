@@ -2,7 +2,7 @@ package application
 
 import (
 	"context"
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 type AccountGetter interface {

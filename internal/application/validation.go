@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 func requireIDs(ids ...domain.ID) error {

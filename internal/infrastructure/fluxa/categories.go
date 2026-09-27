@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"fluxa-cli/internal/application"
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/application"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 func (r *Repository) ListCategories(ctx context.Context, entityID domain.ID) (application.Collection[domain.Category], error) {

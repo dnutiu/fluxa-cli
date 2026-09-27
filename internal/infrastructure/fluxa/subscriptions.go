@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"fluxa-cli/internal/application"
-	"fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/application"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 func (r *Repository) ListSubscriptions(ctx context.Context, entityID domain.ID, filter domain.SubscriptionFilter) (application.Collection[domain.Subscription], error) {

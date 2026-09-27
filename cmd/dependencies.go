@@ -4,9 +4,9 @@ import (
 	"errors"
 	"os"
 
-	"fluxa-cli/internal/domain"
-	"fluxa-cli/internal/infrastructure/fluxa"
-	"fluxa-cli/internal/presentation"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
+	"github.com/dnutiu/fluxa-cli/internal/infrastructure/fluxa"
+	"github.com/dnutiu/fluxa-cli/internal/presentation"
 	"github.com/spf13/cobra"
 )
 

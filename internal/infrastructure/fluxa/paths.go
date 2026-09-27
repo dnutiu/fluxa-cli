@@ -1,8 +1,8 @@
 package fluxa
 
 import (
-	"fluxa-cli/internal/domain"
 	"fmt"
+	"github.com/dnutiu/fluxa-cli/internal/domain"
 )
 
 func collectionPath(entityID domain.ID, resource string) string {

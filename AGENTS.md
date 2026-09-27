@@ -14,6 +14,7 @@
 - `internal/infrastructure/fluxa`: the bearer-authenticated HTTP adapter. Keep endpoint paths, query encoding, headers, and API error parsing here.
 - `internal/infrastructure/config`: Viper settings and persistence. API keys must stay outside saved configuration.
 - `internal/presentation`: JSON and table rendering.
+- `cmd/fluxa`: the executable entry point so `go install github.com/dnutiu/fluxa-cli/cmd/fluxa@latest` produces `fluxa`.
 - `cmd`: Cobra command wiring and terminal input only. Do not put API paths or request code in commands.
 
 For a new API operation, add its domain model or filter if needed, an application use case with its own port, an HTTP adapter method, and a small Cobra command. Keep money as strings throughout.

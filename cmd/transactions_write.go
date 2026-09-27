@@ -12,14 +12,17 @@ import (
 
 func (a *app) transactionAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "add", Short: "Add a transaction from a JSON file", Args: cobra.NoArgs,
+		Use: "add", Short: "Record a transaction with flags", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := transactionInput(cmd, false)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateCreate(); err != nil {
 				return err
 			}
 			key, _ := cmd.Flags().GetString("idempotency-key")
@@ -34,21 +37,21 @@ func (a *app) transactionAddCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			result, err := application.AddTransaction(cmd.Context(), repo, entityID, body, key)
+			result, err := application.AddTransaction(cmd.Context(), repo, entityID, input, key)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Transactions)
 		},
 	}
-	addFileFlag(cmd)
-	cmd.Flags().String("idempotency-key", "", "reuse a key when retrying the exact same create request")
+	addTransactionFlags(cmd, false)
+	cmd.Flags().StringP("idempotency-key", "i", "", "reuse a key when retrying the exact same create request")
 	return cmd
 }
 
 func (a *app) transactionEditCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "edit ID", Short: "Edit a transaction from a JSON file", Args: cobra.ExactArgs(1),
+		Use: "edit ID", Short: "Edit transaction fields with flags", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
@@ -58,22 +61,25 @@ func (a *app) transactionEditCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := transactionInput(cmd, true)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateUpdate(); err != nil {
 				return err
 			}
 			repo, err := a.repository()
 			if err != nil {
 				return err
 			}
-			result, err := application.EditTransaction(cmd.Context(), repo, entityID, transactionID, body)
+			result, err := application.EditTransaction(cmd.Context(), repo, entityID, transactionID, input)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Transactions)
 		},
 	}
-	addFileFlag(cmd)
+	addTransactionFlags(cmd, true)
 	return cmd
 }
 

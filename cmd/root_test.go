@@ -34,24 +34,22 @@ func TestTransactionCreateKeepsExactAmountAndIdempotencyKey(t *testing.T) {
 			t.Errorf("authorization = %q", got)
 		}
 		var body struct {
-			Amount string `json:"amount"`
+			CategoryID int    `json:"category_id"`
+			Amount     string `json:"amount"`
+			Date       string `json:"date"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Error(err)
 		}
-		if body.Amount != "125.00" {
-			t.Errorf("amount = %q", body.Amount)
+		if body.CategoryID != 12 || body.Amount != "125.00" || body.Date != "2026-09-27" {
+			t.Errorf("body = %+v", body)
 		}
 		w.WriteHeader(http.StatusCreated)
 		_, _ = w.Write([]byte(`{"data":{"id":42,"amount":"125.00"}}`))
 	}))
 	defer server.Close()
 	t.Setenv("FLUXA_API_KEY", "test-key")
-	file := filepath.Join(t.TempDir(), "transaction.json")
-	if err := os.WriteFile(file, []byte(`{"category_id":12,"amount":"125.00","date":"2026-09-27"}`), 0600); err != nil {
-		t.Fatal(err)
-	}
-	out, err := runCommand(t, "--config", filepath.Join(t.TempDir(), "none.yaml"), "--base-url", server.URL, "--entity", "7", "--output", "json", "transactions", "add", "--file", file, "--idempotency-key", "fixed-key")
+	out, err := runCommand(t, "-C", filepath.Join(t.TempDir(), "none.yaml"), "-u", server.URL, "-e", "7", "-o", "json", "transactions", "add", "-g", "12", "-m", "125.00", "-d", "2026-09-27", "-i", "fixed-key")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +68,7 @@ func TestTransactionListMapsFilters(t *testing.T) {
 	}))
 	defer server.Close()
 	t.Setenv("FLUXA_API_KEY", "test-key")
-	_, err := runCommand(t, "--config", filepath.Join(t.TempDir(), "none.yaml"), "--base-url", server.URL, "--entity", "7", "transactions", "list", "--date-from", "2026-09-01", "--include-deleted", "--per-page", "50")
+	_, err := runCommand(t, "-C", filepath.Join(t.TempDir(), "none.yaml"), "-u", server.URL, "-e", "7", "transactions", "list", "-f", "2026-09-01", "-D", "-l", "50")
 	if err != nil {
 		t.Fatal(err)
 	}

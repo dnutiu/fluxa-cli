@@ -40,10 +40,10 @@ func (a *app) subscriptionListCommand() *cobra.Command {
 			return a.print(cmd, result, presentation.Subscriptions)
 		},
 	}
-	cmd.Flags().Int("page", 1, "page number")
-	cmd.Flags().Int("per-page", 25, "results per page (maximum 100)")
-	cmd.Flags().Bool("active", false, "filter active or paused subscriptions; use --active=false for paused")
-	cmd.Flags().String("updated-since", "", "RFC 3339 timestamp")
+	cmd.Flags().IntP("page", "p", 1, "page number")
+	cmd.Flags().IntP("per-page", "l", 25, "results per page (maximum 100)")
+	cmd.Flags().BoolP("active", "a", false, "filter active or paused subscriptions; use --active=false for paused")
+	cmd.Flags().StringP("updated-since", "s", "", "RFC 3339 timestamp")
 	return cmd
 }
 

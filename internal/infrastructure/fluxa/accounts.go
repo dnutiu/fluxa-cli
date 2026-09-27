@@ -2,6 +2,7 @@ package fluxa
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 
@@ -25,16 +26,36 @@ func (r *Repository) GetAccount(ctx context.Context, entityID, accountID domain.
 	return result, err
 }
 
-func (r *Repository) CreateAccount(ctx context.Context, entityID domain.ID, payload []byte) (application.Record[domain.Account], error) {
+func (r *Repository) CreateAccount(ctx context.Context, entityID domain.ID, input domain.AccountInput) (application.Record[domain.Account], error) {
 	var result application.Record[domain.Account]
-	err := r.request(ctx, http.MethodPost, collectionPath(entityID, "accounts"), nil, payload, "", &result)
+	payload, err := json.Marshal(accountPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPost, collectionPath(entityID, "accounts"), nil, payload, "", &result)
 	return result, err
 }
 
-func (r *Repository) UpdateAccount(ctx context.Context, entityID, accountID domain.ID, payload []byte) (application.Record[domain.Account], error) {
+func (r *Repository) UpdateAccount(ctx context.Context, entityID, accountID domain.ID, input domain.AccountInput) (application.Record[domain.Account], error) {
 	var result application.Record[domain.Account]
-	err := r.request(ctx, http.MethodPatch, itemPath(entityID, "accounts", accountID), nil, payload, "", &result)
+	payload, err := json.Marshal(accountPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPatch, itemPath(entityID, "accounts", accountID), nil, payload, "", &result)
 	return result, err
+}
+
+func accountPayload(input domain.AccountInput) map[string]any {
+	body := make(map[string]any)
+	putField(body, "name", input.Name)
+	putField(body, "kind", input.Kind)
+	putField(body, "currency", input.Currency)
+	putField(body, "opening_balance", input.OpeningBalance)
+	putField(body, "annual_interest", input.AnnualInterest)
+	putField(body, "interest_tax", input.InterestTax)
+	putField(body, "account_group_id", input.AccountGroupID)
+	return body
 }
 
 func (r *Repository) ArchiveAccount(ctx context.Context, entityID, accountID domain.ID) error {

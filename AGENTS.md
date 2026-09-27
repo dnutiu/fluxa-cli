@@ -3,6 +3,8 @@
 - Build the CLI in Go with Cobra commands and Viper configuration.
 - Use only Fluxa's bearer-authenticated `/api/v1` endpoints. Other JSON routes require a browser session.
 - Keep money as decimal strings, use explicit entity IDs, and preserve API `data`, `meta`, and error envelopes.
+- Accept human-readable long and short flags for every operation. Keep request JSON encoding inside the HTTP adapter; do not forward JSON files from Cobra commands into use cases.
+- Add a useful `--example` / `-X` example for every new command, including command groups.
 - Read API keys from `FLUXA_API_KEY` or a secure credential source. Never print or store them in the configuration file.
 - Add tests for HTTP behavior and command parsing when implementing a workflow.
 - Keep this file and README accurate as commands are added.

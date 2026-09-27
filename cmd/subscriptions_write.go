@@ -9,34 +9,37 @@ import (
 
 func (a *app) subscriptionAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "add", Short: "Add a subscription from a JSON file", Args: cobra.NoArgs,
+		Use: "add", Short: "Create a subscription with flags", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := subscriptionInput(cmd, false)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateCreate(); err != nil {
 				return err
 			}
 			repo, err := a.repository()
 			if err != nil {
 				return err
 			}
-			result, err := application.AddSubscription(cmd.Context(), repo, entityID, body)
+			result, err := application.AddSubscription(cmd.Context(), repo, entityID, input)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Subscriptions)
 		},
 	}
-	addFileFlag(cmd)
+	addSubscriptionFlags(cmd, false)
 	return cmd
 }
 
 func (a *app) subscriptionEditCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "edit ID", Short: "Edit a subscription from a JSON file", Args: cobra.ExactArgs(1),
+		Use: "edit ID", Short: "Edit subscription fields with flags", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
@@ -46,22 +49,25 @@ func (a *app) subscriptionEditCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := subscriptionInput(cmd, true)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateUpdate(); err != nil {
 				return err
 			}
 			repo, err := a.repository()
 			if err != nil {
 				return err
 			}
-			result, err := application.EditSubscription(cmd.Context(), repo, entityID, subscriptionID, body)
+			result, err := application.EditSubscription(cmd.Context(), repo, entityID, subscriptionID, input)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Subscriptions)
 		},
 	}
-	addFileFlag(cmd)
+	addSubscriptionFlags(cmd, true)
 	return cmd
 }
 

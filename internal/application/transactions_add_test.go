@@ -9,31 +9,40 @@ import (
 
 type transactionCreatorSpy struct {
 	calls int
-	body  string
+	input domain.TransactionInput
 	key   string
 }
 
-func (s *transactionCreatorSpy) CreateTransaction(_ context.Context, _ domain.ID, body []byte, key string) (Record[domain.Transaction], error) {
+func (s *transactionCreatorSpy) CreateTransaction(_ context.Context, _ domain.ID, input domain.TransactionInput, key string) (Record[domain.Transaction], error) {
 	s.calls++
-	s.body = string(body)
+	s.input = input
 	s.key = key
 	return Record[domain.Transaction]{Data: domain.Transaction{ID: 42}}, nil
 }
 
+func validTransactionInput() domain.TransactionInput {
+	return domain.TransactionInput{
+		CategoryID: domain.With(domain.ID(12)),
+		Amount:     domain.With("125.00"),
+		Date:       domain.With("2026-09-27"),
+	}
+}
+
 func TestAddTransactionValidatesBeforeCallingRepository(t *testing.T) {
 	for _, tc := range []struct {
-		name string
-		id   domain.ID
-		body string
-		key  string
+		name  string
+		id    domain.ID
+		input domain.TransactionInput
+		key   string
 	}{
-		{"entity", 0, `{"amount":"12.00"}`, "key"},
-		{"body", 7, `[{"amount":"12.00"}]`, "key"},
-		{"key", 7, `{"amount":"12.00"}`, " "},
+		{"entity", 0, validTransactionInput(), "key"},
+		{"category", 7, domain.TransactionInput{Amount: domain.With("12.00"), Date: domain.With("2026-09-27")}, "key"},
+		{"amount", 7, domain.TransactionInput{CategoryID: domain.With(domain.ID(12)), Amount: domain.With("oops"), Date: domain.With("2026-09-27")}, "key"},
+		{"key", 7, validTransactionInput(), " "},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			spy := &transactionCreatorSpy{}
-			if _, err := AddTransaction(context.Background(), spy, tc.id, []byte(tc.body), tc.key); err == nil {
+			if _, err := AddTransaction(context.Background(), spy, tc.id, tc.input, tc.key); err == nil {
 				t.Fatal("expected validation error")
 			}
 			if spy.calls != 0 {
@@ -43,14 +52,14 @@ func TestAddTransactionValidatesBeforeCallingRepository(t *testing.T) {
 	}
 }
 
-func TestAddTransactionForwardsExactBodyAndKey(t *testing.T) {
+func TestAddTransactionForwardsTypedInputAndKey(t *testing.T) {
 	spy := &transactionCreatorSpy{}
-	body := `{"amount":"125.00"}`
-	result, err := AddTransaction(context.Background(), spy, 7, []byte(body), "attempt-1")
+	input := validTransactionInput()
+	result, err := AddTransaction(context.Background(), spy, 7, input, "attempt-1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if spy.calls != 1 || spy.body != body || spy.key != "attempt-1" || result.Data.ID != 42 {
+	if spy.calls != 1 || spy.input.Amount.Value != "125.00" || spy.key != "attempt-1" || result.Data.ID != 42 {
 		t.Fatalf("spy = %+v, result = %+v", spy, result)
 	}
 }

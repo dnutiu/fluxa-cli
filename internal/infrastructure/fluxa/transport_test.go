@@ -30,7 +30,11 @@ func TestCreateTransactionSendsBearerAndIdempotencyKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	result, err := repo.CreateTransaction(context.Background(), 7, []byte(`{"amount":"125.00"}`), "attempt-1")
+	result, err := repo.CreateTransaction(context.Background(), 7, domain.TransactionInput{
+		CategoryID: domain.With(domain.ID(12)),
+		Amount:     domain.With("125.00"),
+		Date:       domain.With("2026-09-27"),
+	}, "attempt-1")
 	if err != nil {
 		t.Fatal(err)
 	}

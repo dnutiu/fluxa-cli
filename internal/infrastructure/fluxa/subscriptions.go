@@ -33,16 +33,39 @@ func (r *Repository) GetSubscription(ctx context.Context, entityID, subscription
 	return result, err
 }
 
-func (r *Repository) CreateSubscription(ctx context.Context, entityID domain.ID, payload []byte) (application.Record[domain.Subscription], error) {
+func (r *Repository) CreateSubscription(ctx context.Context, entityID domain.ID, input domain.SubscriptionInput) (application.Record[domain.Subscription], error) {
 	var result application.Record[domain.Subscription]
-	err := r.request(ctx, http.MethodPost, collectionPath(entityID, "subscriptions"), nil, payload, "", &result)
+	payload, err := json.Marshal(subscriptionPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPost, collectionPath(entityID, "subscriptions"), nil, payload, "", &result)
 	return result, err
 }
 
-func (r *Repository) UpdateSubscription(ctx context.Context, entityID, subscriptionID domain.ID, payload []byte) (application.Record[domain.Subscription], error) {
+func (r *Repository) UpdateSubscription(ctx context.Context, entityID, subscriptionID domain.ID, input domain.SubscriptionInput) (application.Record[domain.Subscription], error) {
 	var result application.Record[domain.Subscription]
-	err := r.request(ctx, http.MethodPatch, itemPath(entityID, "subscriptions", subscriptionID), nil, payload, "", &result)
+	payload, err := json.Marshal(subscriptionPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPatch, itemPath(entityID, "subscriptions", subscriptionID), nil, payload, "", &result)
 	return result, err
+}
+
+func subscriptionPayload(input domain.SubscriptionInput) map[string]any {
+	body := make(map[string]any)
+	putField(body, "name", input.Name)
+	putField(body, "account_id", input.AccountID)
+	putField(body, "amount", input.Amount)
+	putField(body, "currency", input.Currency)
+	putField(body, "exchange_rate", input.ExchangeRate)
+	putField(body, "start_date", input.StartDate)
+	putField(body, "recurrence_interval", input.RecurrenceInterval)
+	putField(body, "active", input.Active)
+	putField(body, "include_vat", input.IncludeVAT)
+	putField(body, "informative", input.Informative)
+	return body
 }
 
 func (r *Repository) DeleteSubscription(ctx context.Context, entityID, subscriptionID domain.ID) error {
@@ -50,8 +73,5 @@ func (r *Repository) DeleteSubscription(ctx context.Context, entityID, subscript
 }
 
 func (r *Repository) SetSubscriptionActive(ctx context.Context, entityID, subscriptionID domain.ID, active bool) (application.Record[domain.Subscription], error) {
-	body, _ := json.Marshal(struct {
-		Active bool `json:"active"`
-	}{Active: active})
-	return r.UpdateSubscription(ctx, entityID, subscriptionID, body)
+	return r.UpdateSubscription(ctx, entityID, subscriptionID, domain.SubscriptionInput{Active: domain.With(active)})
 }

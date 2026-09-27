@@ -27,7 +27,7 @@ func (a *app) accountListCommand() *cobra.Command {
 			return a.print(cmd, result, presentation.Accounts)
 		},
 	}
-	cmd.Flags().Bool("include-archived", false, "include archived accounts")
+	cmd.Flags().BoolP("include-archived", "a", false, "include archived accounts")
 	return cmd
 }
 

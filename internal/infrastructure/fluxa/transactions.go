@@ -2,6 +2,7 @@ package fluxa
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -47,16 +48,38 @@ func (r *Repository) GetTransaction(ctx context.Context, entityID, transactionID
 	return result, err
 }
 
-func (r *Repository) CreateTransaction(ctx context.Context, entityID domain.ID, payload []byte, key string) (application.Record[domain.Transaction], error) {
+func (r *Repository) CreateTransaction(ctx context.Context, entityID domain.ID, input domain.TransactionInput, key string) (application.Record[domain.Transaction], error) {
 	var result application.Record[domain.Transaction]
-	err := r.request(ctx, http.MethodPost, collectionPath(entityID, "transactions"), nil, payload, key, &result)
+	payload, err := json.Marshal(transactionPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPost, collectionPath(entityID, "transactions"), nil, payload, key, &result)
 	return result, err
 }
 
-func (r *Repository) UpdateTransaction(ctx context.Context, entityID, transactionID domain.ID, payload []byte) (application.Record[domain.Transaction], error) {
+func (r *Repository) UpdateTransaction(ctx context.Context, entityID, transactionID domain.ID, input domain.TransactionInput) (application.Record[domain.Transaction], error) {
 	var result application.Record[domain.Transaction]
-	err := r.request(ctx, http.MethodPatch, itemPath(entityID, "transactions", transactionID), nil, payload, "", &result)
+	payload, err := json.Marshal(transactionPayload(input))
+	if err != nil {
+		return result, err
+	}
+	err = r.request(ctx, http.MethodPatch, itemPath(entityID, "transactions", transactionID), nil, payload, "", &result)
 	return result, err
+}
+
+func transactionPayload(input domain.TransactionInput) map[string]any {
+	body := make(map[string]any)
+	putField(body, "category_id", input.CategoryID)
+	putField(body, "account_id", input.AccountID)
+	putField(body, "amount", input.Amount)
+	putField(body, "currency", input.Currency)
+	putField(body, "exchange_rate", input.ExchangeRate)
+	putField(body, "date", input.Date)
+	putField(body, "occurred_at", input.OccurredAt)
+	putField(body, "description", input.Description)
+	putField(body, "exclude_from_analytics", input.ExcludeFromAnalytics)
+	return body
 }
 
 func (r *Repository) DeleteTransaction(ctx context.Context, entityID, transactionID domain.ID) error {

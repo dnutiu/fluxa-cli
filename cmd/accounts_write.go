@@ -9,34 +9,37 @@ import (
 
 func (a *app) accountAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "add", Short: "Add an account from a JSON file", Args: cobra.NoArgs,
+		Use: "add", Short: "Create an account with flags", Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := accountInput(cmd, false)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateCreate(); err != nil {
 				return err
 			}
 			repo, err := a.repository()
 			if err != nil {
 				return err
 			}
-			result, err := application.AddAccount(cmd.Context(), repo, entityID, body)
+			result, err := application.AddAccount(cmd.Context(), repo, entityID, input)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Accounts)
 		},
 	}
-	addFileFlag(cmd)
+	addAccountFlags(cmd, false)
 	return cmd
 }
 
 func (a *app) accountEditCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "edit ID", Short: "Edit an account from a JSON file", Args: cobra.ExactArgs(1),
+		Use: "edit ID", Short: "Edit account fields with flags", Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			entityID, err := a.entityID()
 			if err != nil {
@@ -46,22 +49,25 @@ func (a *app) accountEditCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			body, err := readBody(cmd)
+			input, err := accountInput(cmd, true)
 			if err != nil {
+				return err
+			}
+			if err := input.ValidateUpdate(); err != nil {
 				return err
 			}
 			repo, err := a.repository()
 			if err != nil {
 				return err
 			}
-			result, err := application.EditAccount(cmd.Context(), repo, entityID, accountID, body)
+			result, err := application.EditAccount(cmd.Context(), repo, entityID, accountID, input)
 			if err != nil {
 				return err
 			}
 			return a.print(cmd, result, presentation.Accounts)
 		},
 	}
-	addFileFlag(cmd)
+	addAccountFlags(cmd, true)
 	return cmd
 }
 

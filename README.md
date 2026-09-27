@@ -57,32 +57,24 @@ Find an account ID and an expense category ID, then record an expense:
 ```sh
 fluxa accounts list
 fluxa categories list
-# If the account list is empty, create one and use its returned ID:
-printf '%s\n' '{"name":"Everyday cash","kind":"cash","currency":"RON"}' | fluxa accounts add --file -
-cat > coffee.json <<'JSON'
-{
-  "category_id": 12,
-  "account_id": 4,
-  "amount": "18.50",
-  "currency": "RON",
-  "date": "2026-09-27",
-  "description": "Coffee with the team"
-}
-JSON
-fluxa transactions add --file coffee.json --idempotency-key coffee-2026-09-27
+fluxa accounts add -n 'Everyday cash' -k cash -c RON
+fluxa transactions add -g 12 -a 4 -m 18.50 -d 2026-09-27 -n 'Coffee with the team'
 ```
 
-The category determines whether a transaction is income or expense. Money stays a decimal string, so `"18.50"` keeps its exact value. Reuse the same idempotency key and identical JSON if a response is lost and you need to retry.
+Use the returned account ID in place of `4`, and an expense category ID in place of `12`. The category determines whether a transaction is income or expense. Amounts stay exact decimal strings. If a create response is lost, retry the same field values with the same idempotency key; add `-i coffee-2026-09-27` to choose one yourself.
 
 Now review this month's activity and check recurring payments:
 
 ```sh
-fluxa transactions list --kind expense --date-from 2026-09-01 --date-to 2026-09-30
-fluxa subscriptions list --active=true
-fluxa transactions list --updated-since 2026-09-27T00:00:00Z --output json
+fluxa transactions list -k expense -f 2026-09-01 -t 2026-09-30
+fluxa transactions edit 42 -n 'Coffee and breakfast'
+fluxa subscriptions add -n 'Cloud storage' -m 12.50 -s 2026-09-27 -i monthly
+fluxa subscriptions pause 12
+fluxa subscriptions resume 12
+fluxa transactions list -s 2026-09-27T00:00:00Z -o json
 ```
 
-The last command gives you the API's `data` and `meta` envelope for scripts. You can also pause a subscription with `fluxa subscriptions pause 12` and resume it with `fluxa subscriptions resume 12`.
+The last command gives you the API's `data` and `meta` envelope for scripts. Every command can print a ready-to-adapt example without credentials: `fluxa transactions add --example` or `fluxa accounts edit -X`.
 
 ## 🧭 Shared flags and arguments
 
@@ -90,17 +82,15 @@ Global flags work before or after a command. Use `fluxa --help` or `fluxa transa
 
 | Flag or argument | What it does |
 |---|---|
-| `--config PATH` | Read or save settings at `PATH`. Default: the OS user config directory's `fluxa/config.yaml`. |
-| `--base-url URL` | Talk to another Fluxa host. Default: `https://fluxa.nuculabs.dev`. HTTP is allowed only for loopback development hosts. |
-| `--entity ID` | Use a positive entity ID for this command, overriding the saved default. Required for accounts, categories, transactions, and subscriptions unless an entity is saved. |
-| `--output table\|json` | Choose a readable table (default) or the JSON `data` envelope and pagination `meta` when present. |
-| `--file PATH` | Read a create or edit request from a JSON file. Use `--file -` for stdin. |
-| `--yes` | Confirm account archive, transaction delete, or subscription delete. |
-| `--idempotency-key VALUE` | Choose the retry key for `transactions add`; otherwise the CLI generates one. |
+| `-C`, `--config PATH` | Read or save settings at `PATH`. Default: the OS user config directory's `fluxa/config.yaml`. |
+| `-u`, `--base-url URL` | Talk to another Fluxa host. Default: `https://fluxa.nuculabs.dev`. HTTP is allowed only for loopback development hosts. |
+| `-e`, `--entity ID` | Use a positive entity ID for this command, overriding the saved default. Required for resource commands unless an entity is saved. |
+| `-o`, `--output table\|json` | Choose a readable table (default) or the API's JSON `data` and optional pagination `meta`. |
+| `-X`, `--example` | Print an example for this command, including command groups, without connecting to Fluxa. |
 | `-h`, `--help` | Show help for the current command. |
-| `ID` | A positive integer identifying an account, transaction, or subscription. |
+| `ID` | A positive integer identifying an entity, account, transaction, subscription, category, or account group as appropriate. |
 | `URL` | A Fluxa host URL without a path, query, or embedded credentials. |
-| `PATH` | A file path. For `--file`, use `-` to read JSON from stdin. |
+| `PATH` | A configuration file path. |
 
 Viper also reads `FLUXA_BASE_URL`, `FLUXA_ENTITY`, and `FLUXA_OUTPUT`. An explicit flag takes precedence over the environment and saved settings. Keep your key in `FLUXA_API_KEY`; the CLI does not put it in the config file. Saved config files use mode `0600`.
 
@@ -120,17 +110,29 @@ Viper also reads `FLUXA_BASE_URL`, `FLUXA_ENTITY`, and `FLUXA_OUTPUT`. An explic
 
 | Command | Friendly explanation |
 |---|---|
-| `fluxa accounts list [--include-archived]` | See active accounts and balances. Add `--include-archived` to include archived accounts. |
+| `fluxa accounts list [-a\|--include-archived]` | See accounts and balances; include archived accounts when requested. |
 | `fluxa accounts show ID` | Inspect one account, including an archived one. |
-| `fluxa accounts add --file PATH` | Create an account from a JSON object. |
-| `fluxa accounts edit ID --file PATH` | Update only the fields supplied in a JSON object. |
-| `fluxa accounts archive ID --yes` | Archive an account and keep its transaction history. `--yes` confirms the action. |
+| `fluxa accounts add -n NAME [flags]` | Open an account; the name is required. |
+| `fluxa accounts edit ID [flags]` | Change only the fields you supply; include at least one. |
+| `fluxa accounts archive ID -y` | Archive an account and keep its transaction history. |
 | `fluxa accounts restore ID` | Make an archived account active again. |
 
-For `accounts add`, `name` is required. `kind` defaults to `cash`, `currency` to `RON`, and `opening_balance` to `0`. For example:
+Account add and edit flags:
 
-```json
-{"name":"Operations EUR","kind":"bank","currency":"EUR","opening_balance":"100.00"}
+| Flag | Friendly explanation |
+|---|---|
+| `-n`, `--name NAME` | Give the account a name; required on add. |
+| `-k`, `--kind KIND` | Choose `cash`, `bank`, `card`, `savings`, or `investment`; defaults to `cash`. |
+| `-c`, `--currency CODE` | Choose `RON`, `EUR`, `USD`, `GBP`, or `CHF`; defaults to `RON`. |
+| `-b`, `--opening-balance AMOUNT` | Set a decimal opening balance, such as `100.00`; defaults to `0`. |
+| `-i`, `--annual-interest RATE` | Set the annual interest percentage as a decimal. |
+| `-t`, `--interest-tax RATE` | Set the interest tax percentage as a decimal. |
+| `-g`, `--account-group-id ID` | Link an account group by positive ID. |
+| `-G`, `--clear-account-group` | On edit, remove the linked group. |
+
+```sh
+fluxa accounts add -n 'Operations EUR' -k bank -c EUR -b 100.00
+fluxa accounts edit 4 -G
 ```
 
 ### 🏷️ Categories
@@ -145,25 +147,42 @@ For `accounts add`, `name` is required. `kind` defaults to `cash`, `currency` to
 |---|---|
 | `fluxa transactions list [filters]` | Browse transactions, one page at a time. Filters are listed below. |
 | `fluxa transactions show ID` | Inspect one transaction. |
-| `fluxa transactions add --file PATH [--idempotency-key VALUE]` | Create a transaction. If no key is supplied, the CLI generates one and prints it to stderr before sending. |
-| `fluxa transactions edit ID --file PATH` | Update supplied fields on a transaction. |
-| `fluxa transactions delete ID --yes` | Soft-delete a transaction. `--yes` confirms the action. |
+| `fluxa transactions add -g ID -m AMOUNT (-d DATE\|-t TIME) [flags]` | Record income or an expense; category, nonzero amount, and date or time are required. |
+| `fluxa transactions edit ID [flags]` | Change only supplied fields; include at least one. |
+| `fluxa transactions delete ID -y` | Soft-delete a transaction. |
+
+Transaction add and edit flags:
+
+| Flag | Friendly explanation |
+|---|---|
+| `-g`, `--category-id ID` | Pick the income or expense category; required on add. |
+| `-a`, `--account-id ID` | Link an account by positive ID. |
+| `-m`, `--amount AMOUNT` | Set a nonzero decimal amount, such as `18.50`; required on add. |
+| `-c`, `--currency CODE` | Choose `RON`, `EUR`, `USD`, `GBP`, or `CHF`. |
+| `-r`, `--exchange-rate RATE` | Set a positive decimal exchange rate. |
+| `-d`, `--date YYYY-MM-DD` | Set the transaction date; use this or `--occurred-at` on add. |
+| `-t`, `--occurred-at TIMESTAMP` | Set an exact RFC 3339 time. |
+| `-n`, `--description TEXT` | Add a note. |
+| `-x`, `--exclude-from-analytics[=true\|false]` | Include or exclude this transaction from analytics; explicit `false` works on edit. |
+| `-A`, `--clear-account` | On edit, unlink the account. |
+| `-N`, `--clear-description` | On edit, remove the note. |
+| `-i`, `--idempotency-key VALUE` | On add, supply a retry key (1–200 characters). Otherwise the CLI generates one and prints it to stderr. |
 
 `transactions list` filters:
 
 | Flag | What it does |
 |---|---|
-| `--page N` | Start at page `N`; default `1`. |
-| `--per-page N` | Return `N` records per page; default `25`, maximum `100`. |
-| `--category-id ID` | Show one category's transactions. |
-| `--account-id ID` | Show one account's transactions. |
-| `--kind income\|expense` | Show income or expenses. |
-| `--date-from YYYY-MM-DD` | Include transactions from this date onward. |
-| `--date-to YYYY-MM-DD` | Include transactions through this date. |
-| `--updated-since TIMESTAMP` | Include records updated after an RFC 3339 timestamp, such as `2026-09-27T00:00:00Z`. |
-| `--include-deleted` | Include soft-deleted transactions. |
+| `-p`, `--page N` | Start at page `N`; default `1`. |
+| `-l`, `--per-page N` | Return `N` records per page; default `25`, maximum `100`. |
+| `-g`, `--category-id ID` | Show one category's transactions. |
+| `-a`, `--account-id ID` | Show one account's transactions. |
+| `-k`, `--kind income\|expense` | Show income or expenses. |
+| `-f`, `--date-from YYYY-MM-DD` | Include transactions from this date onward. |
+| `-t`, `--date-to YYYY-MM-DD` | Include transactions through this date. |
+| `-s`, `--updated-since TIMESTAMP` | Include records updated after an RFC 3339 timestamp, such as `2026-09-27T00:00:00Z`. |
+| `-D`, `--include-deleted` | Include soft-deleted transactions. |
 
-For `transactions add`, the JSON object needs `category_id`, a nonzero decimal-string `amount`, and either `date` or `occurred_at`. Other supported fields include `account_id`, `currency`, `exchange_rate`, `description`, and `exclude_from_analytics`. Supply only changed fields for `edit`. Use `--idempotency-key VALUE` (1–200 characters) when you want to choose the retry key yourself; retries must use the same key and exact request body. The CLI does not automatically retry writes.
+Supply only changed fields for `edit`. Retries must use the same idempotency key and the exact same field values. The CLI does not automatically retry writes.
 
 ### 🔁 Subscriptions
 
@@ -171,31 +190,45 @@ For `transactions add`, the JSON object needs `category_id`, a nonzero decimal-s
 |---|---|
 | `fluxa subscriptions list [filters]` | Browse recurring payments. |
 | `fluxa subscriptions show ID` | Inspect one subscription and its billing schedule. |
-| `fluxa subscriptions add --file PATH` | Create a recurring payment from a JSON object. |
-| `fluxa subscriptions edit ID --file PATH` | Update the supplied fields. |
+| `fluxa subscriptions add -n NAME -m AMOUNT -s DATE [flags]` | Set up a recurring payment; name, positive amount, and start date are required. |
+| `fluxa subscriptions edit ID [flags]` | Change supplied fields; include at least one. |
 | `fluxa subscriptions pause ID` | Stop future charges for this subscription. |
 | `fluxa subscriptions resume ID` | Resume the billing schedule. |
-| `fluxa subscriptions delete ID --yes` | Delete a subscription while retaining generated transactions. `--yes` confirms the action. |
+| `fluxa subscriptions delete ID -y` | Delete a subscription while retaining generated transactions. |
+
+Subscription add and edit flags:
+
+| Flag | Friendly explanation |
+|---|---|
+| `-n`, `--name NAME` | Name the recurring payment; required on add. |
+| `-a`, `--account-id ID` | Link an account by positive ID. |
+| `-m`, `--amount AMOUNT` | Set a positive decimal amount; required on add. |
+| `-c`, `--currency CODE` | Choose `RON`, `EUR`, `USD`, `GBP`, or `CHF`; defaults to `RON`. |
+| `-r`, `--exchange-rate RATE` | Set a positive decimal exchange rate. |
+| `-s`, `--start-date YYYY-MM-DD` | Pick the first billing date; required on add. |
+| `-i`, `--recurrence-interval monthly\|yearly` | Choose the billing interval; defaults to `monthly`. |
+| `-A`, `--active[=true\|false]` | Start active by default, or set `--active=false` to pause. |
+| `-v`, `--include-vat[=true\|false]` | Include VAT in the calculated amount. |
+| `-f`, `--informative[=true\|false]` | Mark as informative. |
+| `-G`, `--clear-account` | On edit, unlink the account. |
 
 `subscriptions list` filters:
 
 | Flag | What it does |
 |---|---|
-| `--page N` | Start at page `N`; default `1`. |
-| `--per-page N` | Return `N` records per page; default `25`, maximum `100`. |
-| `--active` or `--active=true` | Show active subscriptions only. |
-| `--active=false` | Show paused subscriptions only. Omit the flag to show both. |
-| `--updated-since TIMESTAMP` | Include records updated after an RFC 3339 timestamp. |
+| `-p`, `--page N` | Start at page `N`; default `1`. |
+| `-l`, `--per-page N` | Return `N` records per page; default `25`, maximum `100`. |
+| `-a`, `--active[=true\|false]` | Show active or paused subscriptions. Omit it to show both. |
+| `-s`, `--updated-since TIMESTAMP` | Include records updated after an RFC 3339 timestamp. |
 
-For `subscriptions add`, provide `name`, a decimal-string `amount`, and `start_date`. `recurrence_interval` defaults to `monthly`, `currency` to `RON`, and `active` to `true`. Optional fields include `account_id`, `exchange_rate`, `include_vat`, and `informative`:
-
-```json
-{"name":"Cloud storage","account_id":4,"amount":"12.50","currency":"EUR","start_date":"2026-09-27","recurrence_interval":"monthly"}
+```sh
+fluxa subscriptions add -n 'Cloud storage' -a 4 -m 12.50 -c EUR -s 2026-09-27 -i monthly
+fluxa subscriptions edit 12 --active=false --include-vat=true
 ```
 
-### 📄 JSON files and output
+### ✅ Confirmation and output
 
-`accounts add/edit`, `transactions add/edit`, and `subscriptions add/edit` all accept `--file PATH` or `--file -` for stdin. The file must contain one JSON object and be no larger than 1 MiB. The Rails application's `docs/api.md` is the field-level API reference.
+`accounts archive`, `transactions delete`, and `subscriptions delete` require `-y` or `--yes` so an accidental invocation cannot remove anything. The Rails application's `docs/api.md` is the field-level API reference.
 
 Tables show selected fields and pagination. `--output json` prints `data` and, for paginated collections, `meta`. API rate limits still apply; the current key limit is 10 requests per minute.
 
@@ -209,7 +242,7 @@ Tables show selected fields and pagination. `--output json` prints `data` and, f
 | `fluxa completion powershell` | Generate PowerShell completion. |
 | `fluxa completion zsh` | Generate Zsh completion. |
 
-Add `--no-descriptions` to any `completion` shell command for a smaller script without descriptive text. For a one-session Zsh setup, run `source <(fluxa completion zsh)`; for Bash, use `source <(fluxa completion bash)`. Each completion command's `--help` explains persistent installation.
+All commands, including `help` and completion commands, accept `-X` or `--example`. Add `--no-descriptions` to a completion shell command for a smaller script. For one session, run `source <(fluxa completion zsh)` or `source <(fluxa completion bash)`; each completion command's `--help` explains persistent installation.
 
 ## 🧪 Build and test
 
@@ -219,10 +252,10 @@ go vet ./...
 go build -o fluxa ./cmd/fluxa
 ```
 
-Tests cover command wiring and flags, config secrecy, operation validation, request headers and paths, API errors, and account balance mapping. They use local HTTP fixtures, so no Fluxa account is needed.
+Tests cover command flags and examples, typed input validation, partial updates, config secrecy, request headers and paths, API errors, and account balance mapping. They use local HTTP fixtures, so no Fluxa account is needed.
 
 ## 🏗️ Code layout and future API work
 
-`cmd` wires Cobra commands; `internal/application` holds one use case and narrow port per operation; `internal/domain` owns models and filter rules; `internal/infrastructure` implements HTTP and Viper settings; `internal/presentation` formats results.
+`cmd` wires Cobra commands and parses terminal flags; `internal/application` holds one use case and narrow port per operation; `internal/domain` owns models and validation; `internal/infrastructure` implements HTTP and Viper settings; `internal/presentation` formats results. JSON request encoding stays in the HTTP adapter.
 
 This CLI covers the current bearer-authenticated `/api/v1` surface. More Fluxa workflows need new Rails endpoints; their proposed contracts are in `docs/future_plans/fluxa_cli.md` in the Rails repository.

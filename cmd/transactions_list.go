@@ -41,14 +41,14 @@ func (a *app) transactionListCommand() *cobra.Command {
 			return a.print(cmd, result, presentation.Transactions)
 		},
 	}
-	cmd.Flags().Int("page", 1, "page number")
-	cmd.Flags().Int("per-page", 25, "results per page (maximum 100)")
-	cmd.Flags().Int("category-id", 0, "filter by category ID")
-	cmd.Flags().Int("account-id", 0, "filter by account ID")
-	cmd.Flags().String("kind", "", "income or expense")
-	cmd.Flags().String("date-from", "", "inclusive start date (YYYY-MM-DD)")
-	cmd.Flags().String("date-to", "", "inclusive end date (YYYY-MM-DD)")
-	cmd.Flags().String("updated-since", "", "RFC 3339 timestamp")
-	cmd.Flags().Bool("include-deleted", false, "include soft-deleted records")
+	cmd.Flags().IntP("page", "p", 1, "page number")
+	cmd.Flags().IntP("per-page", "l", 25, "results per page (maximum 100)")
+	cmd.Flags().IntP("category-id", "g", 0, "filter by category ID")
+	cmd.Flags().IntP("account-id", "a", 0, "filter by account ID")
+	cmd.Flags().StringP("kind", "k", "", "income or expense")
+	cmd.Flags().StringP("date-from", "f", "", "inclusive start date (YYYY-MM-DD)")
+	cmd.Flags().StringP("date-to", "t", "", "inclusive end date (YYYY-MM-DD)")
+	cmd.Flags().StringP("updated-since", "s", "", "RFC 3339 timestamp")
+	cmd.Flags().BoolP("include-deleted", "D", false, "include soft-deleted records")
 	return cmd
 }
